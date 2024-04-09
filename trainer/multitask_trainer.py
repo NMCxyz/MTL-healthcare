@@ -69,6 +69,10 @@ class MultitaskTrainer(BaseTrainer):
         best_cls_log = {}
         best_reg_log = {}
         best_multitask_log = {}
+        last_cls_log = {}
+        last_reg_log = {}
+        last_multitask_log = {}
+        
         
         # Training
         self.model.to(device)
@@ -177,12 +181,22 @@ class MultitaskTrainer(BaseTrainer):
                 "train_ce": round(test_log["Train Loss Cls"], 2)
             }  
             pbar.set_postfix(**records)
+            
+            last_cls_log = {key: value for key, value in test_log.items() if 'Cls' in key or 'Acc' in key or 'F1' in key}
+            last_reg_log = {key: value for key, value in test_log.items() if 'Reg' in key or 'MAE' in key}
+            last_multitask_log = {key: value for key, value in test_log.items() if 'Loss' in key}
+
 
         result_training = {
             "best_metrics": {
                 "best_cls_log": best_cls_log,
                 "best_reg_log": best_reg_log,
                 "best_multitask_log": best_multitask_log
+            },
+            "last_metrics": {
+                "last_cls_log": last_cls_log,
+                "last_reg_log": last_reg_log,
+                "last_multitask_log": last_multitask_log
             }
         }
         log_path = os.path.join(self.output_dir, "result_training.json") 
