@@ -58,11 +58,11 @@ class MultitaskOrthogonalTrainer(MultitaskTrainer):
             y_cls = y_cls.view(-1)
             cls_loss = cls_loss_fn(cls_output, y_cls)
 
-            grads_reg = torch.autograd.grad(reg_loss, model.lstm.parameters(), retain_graph=True)
-            grads_cls = torch.autograd.grad(cls_loss, model.lstm.parameters(), retain_graph=True)
+            grads_reg = torch.autograd.grad(reg_loss, model.rnn.parameters(), retain_graph=True)
+            grads_cls = torch.autograd.grad(cls_loss, model.rnn.parameters(), retain_graph=True)
 
             trace_norm_regular_list = []
-            for param in model.lstm.parameters():
+            for param in model.rnn.parameters():
                 if len(param.shape) == 1:
                     continue
                 trace_norm_regular = torch.mean(TensorTraceNorm(param))
@@ -78,7 +78,7 @@ class MultitaskOrthogonalTrainer(MultitaskTrainer):
                 )
 
             loss = self.w_reg * reg_loss + self.w_cls * cls_loss + self.w_grad * grad_loss \
-                   + self.weight_trace_norm*trace_norm_regular
+                    + self.weight_trace_norm*trace_norm_regular
 
             optimizer.zero_grad()
             loss.backward()
