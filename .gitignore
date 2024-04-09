@@ -1,0 +1,7 @@
+data/**
+*.ipynb
+.env
+wandb/**
+models/**
+__pycache__/
+docs/**

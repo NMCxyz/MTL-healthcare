@@ -1,0 +1,10 @@
+audiomentations==0.34.1
+numpy
+pandas
+scipy
+torch
+tqdm
+python-dotenv
+wandb
+matplotlib
+seaborn
