@@ -62,7 +62,7 @@ class MultitaskOrthogonalTrainer(MultitaskTrainer):
             grads_cls = torch.autograd.grad(cls_loss, model.lstm.parameters(), retain_graph=True)
 
             trace_norm_regular_list = []
-            for param in model.rnn.parameters():
+            for param in model.lstm.parameters():
                 if len(param.shape) == 1:
                     continue
                 trace_norm_regular = torch.mean(TensorTraceNorm(param))
