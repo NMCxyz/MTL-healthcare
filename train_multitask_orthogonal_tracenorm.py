@@ -6,8 +6,7 @@ import torch
 
 from dataset import get_data_mtl
 from dataset import MultitaskDataset
-# from trainer import MultitaskTrainer
-from trainer.multitask_orthogonal_trainer import MultitaskOrthogonalTrainer
+from trainer.multitask_orthogonal_tracenorm_trainer import MultitaskOrthogonalTracenormTrainer
 from net import (
     MultitaskLSTM,
     cls_metric,
@@ -33,6 +32,7 @@ def parse_arguments():
     parser.add_argument('--w_regression', type=float, default=1, help='Weight regression loss')
     parser.add_argument('--w_classify', type=float, default=1, help='Weight classify loss')
     parser.add_argument('--w_grad', type=float, default=1, help='Weight gradient loss')
+    parser.add_argument('--w_trace_norm', type=float, default=1, help='Weight gradient loss')
 
     
     # Location of data and checkpoint 
@@ -65,6 +65,7 @@ if __name__ == "__main__":
         set_random_seed(seed=args.seed)
     else:
         print("Initialize parameters random without seed")
+
     # Load data
     data = np.load(args.data_path)
     print("Loading data from {}...".format(args.data_path))
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     print("- Number of epochs: {}".format(args.epochs))
     print("- Learning rate: {}".format(args.learning_rate))
     print("Model config:\n", model)
-    trainer = MultitaskOrthogonalTrainer(
+    trainer = MultitaskOrthogonalTracenormTrainer(
         model=model,
         train_dataset=train_dataset,
         eval_dataset=test_dataset,
@@ -122,7 +123,8 @@ if __name__ == "__main__":
         experiment_name=args.experiment_name,
         weight_regression=args.w_regression,
         weight_classify=args.w_classify,
-        weight_grad=args.w_grad
+        weight_grad=args.w_grad,
+        weight_trace_norm=args.w_trace_norm
 
     )
     trainer.train()

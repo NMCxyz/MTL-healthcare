@@ -2,23 +2,24 @@ import os
 import wandb
 import torch
 from tqdm import tqdm
-
+import numpy as np
 from utils import save_json
 from utils import pretty_print_json
+from trace_norm import TensorTraceNorm
 from trainer.multitask_trainer import MultitaskTrainer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class MultitaskOrthogonalTrainer(MultitaskTrainer):
+class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
 
     def __init__(
             self, model, train_dataset, eval_dataset, \
             optimizer, batch_size, epochs, output_dir, \
             log_steps, log_wandb, project_name, experiment_name, \
             cls_loss_fn, reg_loss_fn, cls_metric, reg_metric, \
-            weight_regression, weight_classify, weight_grad
-        ):
+            weight_regression, weight_classify, weight_grad, weight_trace_norm
+    ):
         super().__init__(
             model, train_dataset, eval_dataset, optimizer, batch_size, \
             epochs, output_dir, log_steps, log_wandb, project_name, \
@@ -28,6 +29,7 @@ class MultitaskOrthogonalTrainer(MultitaskTrainer):
         self.w_reg = weight_regression
         self.w_cls = weight_classify
         self.w_grad = weight_grad
+        self.weight_trace_norm = weight_trace_norm
 
     def _inner_training_loop(
             self,
@@ -59,6 +61,15 @@ class MultitaskOrthogonalTrainer(MultitaskTrainer):
             grads_reg = torch.autograd.grad(reg_loss, model.lstm.parameters(), retain_graph=True)
             grads_cls = torch.autograd.grad(cls_loss, model.lstm.parameters(), retain_graph=True)
 
+            trace_norm_regular_list = []
+            for param in model.lstm.parameters():
+                if len(param.shape) == 1:
+                    continue
+                trace_norm_regular = torch.mean(TensorTraceNorm(param))
+                trace_norm_regular_list.append(trace_norm_regular)
+
+            trace_norm_regular = torch.mean(torch.stack(trace_norm_regular_list))
+
             grad_loss = 0
             #
             for i in range(len(grads_reg)):
@@ -66,12 +77,8 @@ class MultitaskOrthogonalTrainer(MultitaskTrainer):
                     (torch.mul(grads_cls[i], grads_reg[i]) - torch.ones_like(grads_reg[i]).to(device)), 2
                 )
 
-            loss = self.w_reg * reg_loss + self.w_cls * cls_loss + self.w_grad * grad_loss
-
-            # loss = reg_loss + cls_loss + grad_loss
-
-
-            # loss = reg_loss + cls_loss
+            loss = self.w_reg * reg_loss + self.w_cls * cls_loss + self.w_grad * grad_loss \
+                    + self.weight_trace_norm*trace_norm_regular
 
             optimizer.zero_grad()
             loss.backward()

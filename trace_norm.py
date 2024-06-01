@@ -29,7 +29,7 @@ def TensorTraceNorm(X, method='Tucker'):
         re = [nuclear_norm(i) for i in [TensorUnfold(X, j) for j in range(dimX)]]
     elif method == 'TT':
         re = [nuclear_norm(i) for i in
-              [X.reshape([np.prod(shapeX[:j]), np.prod(shapeX[j:])]) for j in range(1, dimX)]]
+                [X.reshape([np.prod(shapeX[:j]), np.prod(shapeX[j:])]) for j in range(1, dimX)]]
     elif method == 'LAF':
         re = [nuclear_norm(TensorUnfold(X, -1))]
     return torch.stack(re)
