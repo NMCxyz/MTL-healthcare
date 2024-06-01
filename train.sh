@@ -33,7 +33,7 @@ python train_multitask_orthogonal.py \
     --w_classify 0.33 \
     --w_trace_norm 0.001 \
     --w_grad 0.33 \
-    --data_path "data/train_validate.npz" \
+    --data_path "data/respiration_regression_and_12posture-classification.npz" \
     --output_dir "models/multitask_LSTM" \
     --project_name "Multitask healthcare" \
     --experiment_name "mtl-LSTM-128-64-orthogonal" \

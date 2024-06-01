@@ -4,7 +4,7 @@ list_batch_size = [64, 128, 256, 512, 1024]
 list_learning_rate = [10e-4, 5 * 10e-4, 10e-3, 5 * 10e-3]
 list_hidden_1 = [64, 128, 256, 512, 1024]
 list_hidden_2 = [64, 128, 256, 512, 1024]
-
+list_
 
 
 if __name__ == "__main__":
@@ -26,7 +26,7 @@ python train_multitask_orthogonal.py \
     --w_regression 0.33 \
     --w_classify 0.33 \
     --w_grad 0.33 \
-    --data_path "data/train_validate.npz" \
+    --data_path "data/multitask_cls12_regr.npz" \
     --output_dir "models/multitask_LSTM" \
     --project_name "Multitask healthcare" \
     --experiment_name "mtl-LSTM-128-64-orthogonal" \
