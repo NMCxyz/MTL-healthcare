@@ -1,13 +1,11 @@
 import os
 import wandb
 import torch
-import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import numpy as np
-sns.set()
 from utils import save_json
 from utils import pretty_print_json
 from trainer.base_trainer import BaseTrainer
@@ -203,6 +201,7 @@ class MultitaskTrainer(BaseTrainer):
             title="Training history",
             n_epochs=self.epochs
         )
+        
         self.visualize_history_training(
             history_metrics=self.history_training["test"],
             save_path=os.path.join(self.output_dir, "validate_log"),
@@ -364,7 +363,10 @@ class MultitaskTrainer(BaseTrainer):
             plt.ylabel(metric)
             plt.title(f"{title} - {metric}")
             plt.legend()
+            # Save each figure separately
             individual_save_path = save_path + f"_{metric}.png"
             plt.savefig(individual_save_path)
-            plt.show()  
+            plt.show()  # Hiển thị trong Jupyter Notebook
             plt.close()
+
+
