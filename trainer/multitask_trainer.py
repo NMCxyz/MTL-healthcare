@@ -3,6 +3,7 @@ import wandb
 import torch
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import rcParams
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
