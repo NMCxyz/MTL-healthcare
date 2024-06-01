@@ -5,6 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from tqdm import tqdm
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 sns.set()
 from utils import save_json
 from utils import pretty_print_json
@@ -291,6 +292,8 @@ class MultitaskTrainer(BaseTrainer):
         total_f1 = 0
         
         model.eval()
+        all_preds = []
+        all_labels = []
         with torch.no_grad():
             for x, y_cls, y_reg in test_dataloader:
                 y_cls = y_cls.view(-1)
@@ -308,7 +311,10 @@ class MultitaskTrainer(BaseTrainer):
                 acc, f1 = cls_metric(cls_output, y_cls)
                 total_acc += acc
                 total_f1 += f1
-                
+
+                # Collecting all predictions and labels for confusion matrix
+                all_preds.append(torch.argmax(cls_output, dim=1).cpu().numpy())
+                all_labels.append(y_cls.cpu().numpy())
                 
 
         avg_loss = total_loss / num_batches
@@ -328,14 +334,18 @@ class MultitaskTrainer(BaseTrainer):
             "Test F1": avg_f1
         }
         
-    #     log_result = {
-    #         "Test Loss": avg_loss,
-    #         "Test Acc": avg_acc,
-    #         "Test F1": avg_f1
-    #     }
         for k, v in log_result.items():
             log_result[k] = round(v, 4)
         log_result.update(train_log)
+        
+        # Calculate and plot confusion matrix
+        all_preds = np.concatenate(all_preds)
+        all_labels = np.concatenate(all_labels)
+        cm = confusion_matrix(all_labels, all_preds)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.show()
+        
         return log_result
     
     def visualize_history_training(self, history_metrics, save_path, title, n_epochs):
