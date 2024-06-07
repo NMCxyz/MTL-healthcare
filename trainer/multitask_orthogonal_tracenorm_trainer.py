@@ -7,6 +7,14 @@ from utils import save_json, pretty_print_json
 from trace_norm import TensorTraceNorm
 from trainer.multitask_trainer import MultitaskTrainer
 
+from net import (
+    MultitaskLSTM,
+    MultitaskGRU,
+    MultitaskRNN,
+    MultitaskMLSTMfcn,
+    MultitaskTCN
+)
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
