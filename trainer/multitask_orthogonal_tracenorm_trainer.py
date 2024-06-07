@@ -3,26 +3,23 @@ import wandb
 import torch
 from tqdm import tqdm
 import numpy as np
-from utils import save_json
-from utils import pretty_print_json
+from utils import save_json, pretty_print_json
 from trace_norm import TensorTraceNorm
 from trainer.multitask_trainer import MultitaskTrainer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
 class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
-
     def __init__(
-            self, model, train_dataset, eval_dataset, \
-            optimizer, batch_size, epochs, output_dir, \
-            log_steps, log_wandb, project_name, experiment_name, \
-            cls_loss_fn, reg_loss_fn, cls_metric, reg_metric, \
+            self, model, train_dataset, eval_dataset,
+            optimizer, batch_size, epochs, output_dir,
+            log_steps, log_wandb, project_name, experiment_name,
+            cls_loss_fn, reg_loss_fn, cls_metric, reg_metric,
             weight_regression, weight_classify, weight_grad, weight_trace_norm
     ):
         super().__init__(
-            model, train_dataset, eval_dataset, optimizer, batch_size, \
-            epochs, output_dir, log_steps, log_wandb, project_name, \
+            model, train_dataset, eval_dataset, optimizer, batch_size,
+            epochs, output_dir, log_steps, log_wandb, project_name,
             experiment_name, cls_loss_fn, reg_loss_fn, cls_metric, reg_metric
         )
 
@@ -52,17 +49,24 @@ class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
         total_f1 = 0
         model.train()
         step = 0
+
         for x, y_cls, y_reg in train_dataloader:
-            reg_output, cls_output = model(x)
+            x, y_cls, y_reg = x.to(device), y_cls.to(device), y_reg.to(device)
+
+            if isinstance(model, (MultitaskLSTM, MultitaskGRU, MultitaskRNN, MultitaskMLSTMfcn, MultitaskTCN)):
+                reg_output, cls_output = model(x)
+            else:
+                raise ValueError(f"Unsupported model type: {type(model)}")
+
             reg_loss = reg_loss_fn(reg_output, y_reg)
             y_cls = y_cls.view(-1)
             cls_loss = cls_loss_fn(cls_output, y_cls)
 
-            grads_reg = torch.autograd.grad(reg_loss, model.lstm.parameters(), retain_graph=True)
-            grads_cls = torch.autograd.grad(cls_loss, model.lstm.parameters(), retain_graph=True)
+            grads_reg = torch.autograd.grad(reg_loss, model.parameters(), retain_graph=True, allow_unused=True)
+            grads_cls = torch.autograd.grad(cls_loss, model.parameters(), retain_graph=True, allow_unused=True)
 
             trace_norm_regular_list = []
-            for param in model.lstm.parameters():
+            for param in model.parameters():
                 if len(param.shape) == 1:
                     continue
                 trace_norm_regular = torch.mean(TensorTraceNorm(param))
@@ -71,14 +75,14 @@ class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
             trace_norm_regular = torch.mean(torch.stack(trace_norm_regular_list))
 
             grad_loss = 0
-            #
             for i in range(len(grads_reg)):
-                grad_loss += torch.norm(
-                    (torch.mul(grads_cls[i], grads_reg[i]) - torch.ones_like(grads_reg[i]).to(device)), 2
-                )
+                if grads_reg[i] is not None and grads_cls[i] is not None:
+                    grad_loss += torch.norm(
+                        (torch.mul(grads_cls[i], grads_reg[i]) - torch.ones_like(grads_reg[i]).to(device)), 2
+                    )
 
             loss = self.w_reg * reg_loss + self.w_cls * cls_loss + self.w_grad * grad_loss \
-                    + self.weight_trace_norm*trace_norm_regular
+                    + self.weight_trace_norm * trace_norm_regular
 
             optimizer.zero_grad()
             loss.backward()
@@ -93,13 +97,14 @@ class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
             total_acc += acc
             total_f1 += f1
             step += 1
+
         avg_loss = total_loss / num_batches
         avg_loss_cls = total_loss_cls / num_batches
         avg_loss_reg = total_loss_reg / num_batches
 
         avg_mae = total_mae / num_batches
         avg_acc = total_acc / num_batches
-        avg_f1 = total_acc / num_batches
+        avg_f1 = total_f1 / num_batches
 
         log_result = {
             "Train Loss": avg_loss,
