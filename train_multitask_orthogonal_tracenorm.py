@@ -9,12 +9,15 @@ from dataset import MultitaskDataset
 from trainer.multitask_orthogonal_tracenorm_trainer import MultitaskOrthogonalTracenormTrainer
 from net import (
     MultitaskLSTM,
+    MultitaskGRU,
+    MultitaskRNN,
+    MultitaskMLSTMfcn,
+    MultitaskTCN,
     cls_metric,
     cls_loss_fn,
     reg_loss_fn,
     reg_metric
 )
-
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Hyper parameters for training")
@@ -43,6 +46,9 @@ def parse_arguments():
     parser.add_argument('--log_wandb', action='store_true', help='Enable wandb logging')
     parser.add_argument('--project_name', type=str, default='Project demo', help='WandB project name')
     parser.add_argument('--experiment_name', type=str, default='Experiment demo', help='WandB experiment name')
+    
+    # Model type
+    parser.add_argument('--model_type', type=str, help='Type of model to use')
     
     args = parser.parse_args()
     return args
@@ -83,14 +89,35 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Initialize the PyTorch model
-    model = MultitaskLSTM(
-        input_size=args.input_dim,
-        hidden_size_1=args.n_hidden_1,
-        hidden_size_2=args.n_hidden_2,
-        output_size=args.n_classes,
-        dropout=args.p_dropout
-    )
+    if args.model_type == "MultitaskLSTM":
+        model = MultitaskLSTM(
+            input_size=args.input_dim,
+            hidden_size_1=args.n_hidden_1,
+            hidden_size_2=args.n_hidden_2,
+            output_size=args.n_classes,
+            dropout=args.p_dropout
+        )
+    elif args.model_type == "MultitaskRNN":
+        model = MultitaskRNN(
+            input_size=args.input_dim,
+            hidden_size_1=args.n_hidden_1,
+            hidden_size_2=args.n_hidden_2,
+            output_size=args.n_classes,
+            dropout=args.p_dropout
+        )
+    elif args.model_type == "MultitaskGRU":
+        model = MultitaskGRU(
+            input_size=args.input_dim,
+            hidden_size_1=args.n_hidden_1,
+            hidden_size_2=args.n_hidden_2,
+            output_size=args.n_classes,
+            dropout=args.p_dropout
+        )
+    # Add more elif blocks here for other model types as needed
+    else:
+        raise ValueError("Unsupported model type: {}".format(args.model_type))
+    
+
     model = model.to(device)
 
     optimizer = torch.optim.Adam(
