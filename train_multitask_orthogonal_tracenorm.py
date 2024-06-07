@@ -1,5 +1,6 @@
 import argparse
 import random
+import itertools
 
 import numpy as np
 import torch
@@ -37,7 +38,6 @@ def parse_arguments():
     parser.add_argument('--w_grad', type=float, default=1, help='Weight gradient loss')
     parser.add_argument('--w_trace_norm', type=float, default=1, help='Weight gradient loss')
 
-    
     # Location of data and checkpoint 
     parser.add_argument('--data_path', type=str, help='Path to the data training')
     parser.add_argument('--output_dir', type=str, help='Output directory for saving models')
@@ -53,7 +53,6 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
-
 def set_random_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -62,10 +61,7 @@ def set_random_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False  
 
-if __name__ == "__main__":
-    args = parse_arguments()
-
-    # Set the random seed
+def train_model(args, w_regression, w_classify, w_grad, w_trace_norm):
     if args.seed:
         print("Initialize parameters with random seed: ", args.seed)
         set_random_seed(seed=args.seed)
@@ -117,7 +113,6 @@ if __name__ == "__main__":
     else:
         raise ValueError("Unsupported model type: {}".format(args.model_type))
     
-
     model = model.to(device)
 
     optimizer = torch.optim.Adam(
@@ -125,6 +120,8 @@ if __name__ == "__main__":
         lr=args.learning_rate
     )
 
+    output_dir = f"{args.output_dir}/{w_regression}-{w_classify}-{w_grad}-{w_trace_norm}"
+    
     print("Training info:\n")
     print("- Train data: {} samples".format(len(train_dataset)))
     print("- Test data: {} samples".format(len(test_dataset)))
@@ -132,6 +129,7 @@ if __name__ == "__main__":
     print("- Number of epochs: {}".format(args.epochs))
     print("- Learning rate: {}".format(args.learning_rate))
     print("Model config:\n", model)
+    
     trainer = MultitaskOrthogonalTracenormTrainer(
         model=model,
         train_dataset=train_dataset,
@@ -143,15 +141,29 @@ if __name__ == "__main__":
         optimizer=optimizer,
         batch_size=args.batch_size,
         epochs=args.epochs,
-        output_dir=args.output_dir,
+        output_dir=output_dir,
         log_steps=args.log_steps,
         log_wandb=args.log_wandb,
         project_name=args.project_name,
-        experiment_name=args.experiment_name,
-        weight_regression=args.w_regression,
-        weight_classify=args.w_classify,
-        weight_grad=args.w_grad,
-        weight_trace_norm=args.w_trace_norm
-
+        experiment_name=f"mtl-LSTM-128-64-orthogonal-{w_regression}-{w_classify}-{w_grad}-{w_trace_norm}",
+        weight_regression=w_regression,
+        weight_classify=w_classify,
+        weight_grad=w_grad,
+        weight_trace_norm=w_trace_norm
     )
+    
     trainer.train()
+
+if __name__ == "__main__":
+    args = parse_arguments()
+
+    w_regression_values = [0.4, 0.6]
+    w_classify_values = [0.9, 0.6, 0.5]
+    w_grad_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    w_trace_norm_values = [0.1, 0.01, 0.001]
+
+    combinations = list(itertools.product(w_regression_values, w_classify_values, w_grad_values, w_trace_norm_values))
+
+    for w_regression, w_classify, w_grad, w_trace_norm in combinations:
+        print(f"Training with w_regression={w_regression}, w_classify={w_classify}, w_grad={w_grad}, w_trace_norm={w_trace_norm}")
+        train_model(args, w_regression, w_classify, w_grad, w_trace_norm)
