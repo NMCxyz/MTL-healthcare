@@ -172,7 +172,7 @@ class MultitaskGRU(nn.Module):
     def forward(self, x):
         out, _ = self.gru1(x)
         cls_out = out.contiguous()
-        cls_out = cls_out.view(-1, cls_out.size(-1))
+        cls_out = cls_out.view(x.size(0), -1, cls_out.size(-1))
         cls_out = self.cls(cls_out)
 
         out, _ = self.gru2(out)
@@ -180,7 +180,8 @@ class MultitaskGRU(nn.Module):
         reg_out = out[:, -1, :]  
         reg_out = self.reg(reg_out).squeeze()
         
-        return cls_out, reg_out
+        return reg_out, cls_out
+
 
 # ------------------ RNN ------------------------
 
