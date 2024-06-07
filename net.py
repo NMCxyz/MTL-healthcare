@@ -171,8 +171,7 @@ class MultitaskGRU(nn.Module):
 
     def forward(self, x):
         out, _ = self.gru1(x)
-        cls_out = out.contiguous()
-        cls_out = cls_out.view(x.size(0), -1, cls_out.size(-1))
+        cls_out = out[:, -1, :]  # Sử dụng đầu ra của bước cuối cùng cho phân loại
         cls_out = self.cls(cls_out)
 
         out, _ = self.gru2(out)
@@ -181,6 +180,7 @@ class MultitaskGRU(nn.Module):
         reg_out = self.reg(reg_out).squeeze()
         
         return reg_out, cls_out
+
 
 
 # ------------------ RNN ------------------------

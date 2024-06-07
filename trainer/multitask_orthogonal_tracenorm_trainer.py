@@ -125,7 +125,6 @@
 
 #         return log_result
 
-
 import os
 import wandb
 import torch
@@ -139,7 +138,11 @@ from net import (
     MultitaskGRU,
     MultitaskRNN,
     MultitaskMLSTMfcn,
-    MultitaskTCN
+    MultitaskTCN,
+    cls_metric,
+    cls_loss_fn,
+    reg_loss_fn,
+    reg_metric
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -211,7 +214,7 @@ class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
 
             grad_loss = 0
             for i in range(len(grads_reg)):
-                if grads_reg[i] is not None and grads_cls[i] is not None:
+                if grads_reg[i] is not None và grads_cls[i] is not None:
                     grad_loss += torch.norm(
                         (torch.mul(grads_cls[i], grads_reg[i]) - torch.ones_like(grads_reg[i]).to(device)), 2
                     )
@@ -251,3 +254,4 @@ class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
         }
 
         return log_result
+
