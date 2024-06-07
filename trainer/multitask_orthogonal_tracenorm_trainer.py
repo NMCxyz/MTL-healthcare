@@ -254,4 +254,3 @@ class MultitaskOrthogonalTracenormTrainer(MultitaskTrainer):
         }
 
         return log_result
-
