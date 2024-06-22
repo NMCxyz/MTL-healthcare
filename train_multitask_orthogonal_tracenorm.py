@@ -157,10 +157,15 @@ def train_model(args, w_regression, w_classify, w_grad, w_trace_norm):
 if __name__ == "__main__":
     args = parse_arguments()
 
-    w_regression_values = [0.4, 0.6]
-    w_classify_values = [0.9, 0.6, 0.5]
-    w_grad_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    w_trace_norm_values = [0.1, 0.01, 0.001]
+    # w_regression_values = [0.4, 0.6]
+    # w_classify_values = [0.9, 0.6, 0.5]
+    # w_grad_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    # w_trace_norm_values = [0.1, 0.01, 0.001]
+    
+    w_regression_values = [0.4]
+    w_classify_values = [0.9]
+    w_grad_values = [0.3]
+    w_trace_norm_values = [0.001]
 
     combinations = list(itertools.product(w_regression_values, w_classify_values, w_grad_values, w_trace_norm_values))
 
